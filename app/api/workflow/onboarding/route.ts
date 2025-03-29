@@ -39,10 +39,13 @@ const getUserState = async (email: string): Promise<UserState> => {
 };
 
 export const { POST } = serve<InitialData>(async (context) => {
+  console.log("🔥 API Route Hit!");
   const { email, fullName } = context.requestPayload;
+  console.log("Received Payload:", { email, fullName });
 
   // Welcome Email
   await context.run("new-signup", async () => {
+    console.log("📨 Sending welcome email...");
     await sendEmail({
       email,
       subject: "Welcome to Bookwise",

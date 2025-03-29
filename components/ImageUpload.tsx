@@ -1,11 +1,11 @@
 'use client'
 
-import { useRef, useState } from "react";
 import Image from "next/image";
+import { useRef, useState } from "react";
 
 import config from "@/lib/config";
-import { IKImage, IKVideo, ImageKitProvider, IKUpload, ImageKitContext } from "imagekitio-next";
-import { toast } from "sonner"
+import { IKImage, IKUpload, ImageKitProvider } from "imagekitio-next";
+import { toast } from "sonner";
 
 
 const {
@@ -36,15 +36,18 @@ const authenticator = async () => {
 
 const ImageUpload = ({ onFileChange }: { onFileChange: (filePath: string) => void }) => {
     const ikUploadRef = useRef(null)
+    const [isUploading, setIsUploading] = useState(false)
     const [file, setFile] = useState<{ filePath: string } | null>(null)
 
     const onError = (error: any) => {
         console.log(error)
+        setIsUploading(false)
 
         toast.warning("Image upload failed. Please try again")
     }
 
     const onSuccess = (res: any) => {
+        setIsUploading(false)
         setFile(res)
         onFileChange(res.filePath)
 
@@ -64,6 +67,7 @@ const ImageUpload = ({ onFileChange }: { onFileChange: (filePath: string) => voi
                 ref={ikUploadRef}
                 onError={onError}
                 onSuccess={onSuccess}
+                onUploadProgress={() => setIsUploading(true)}
                 fileName="test-upload.png"
             />
 
@@ -79,18 +83,17 @@ const ImageUpload = ({ onFileChange }: { onFileChange: (filePath: string) => voi
                 }}
             >
                 <Image src="/icons/upload.svg" alt="upload-icon" width={20} height={20} className="object-contain" />
-                <p className="text-base text-light-100">Upload a file</p>
+                <p className="text-base text-light-100">{isUploading ? "Uploading..." : "Upload a file"}</p>
 
                 {file && <p className="upload-filename">{file.filePath}</p>}
             </button>
 
             {file && <IKImage
-                src={file.filePath}
+                path={file.filePath}
                 alt={file.filePath}
                 width={500}
                 height={300}
-            />
-            }
+            />}
         </ImageKitProvider>
     )
 }
