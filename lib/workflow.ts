@@ -1,5 +1,5 @@
 import { Client as WorkflowClient } from "@upstash/workflow";
-import emailjs from "@emailjs/browser";
+import emailjs, { EmailJSResponseStatus } from "@emailjs/nodejs";
 import config from "./config";
 
 export const workflowClient = new WorkflowClient({
@@ -7,42 +7,13 @@ export const workflowClient = new WorkflowClient({
   token: config.env.upstash.qstashToken,
 });
 
-// export const sendEmail = async ({
-//   email,
-//   subject,
-//   message,
-// }: {
-//   email: string;
-//   subject: string;
-//   message: string;
-// }) => {
-//   emailjs
-//     .send(
-//       "service_w1zq7xd",
-//       "template_0ldf3x5",
-//       {
-//         email,
-//         subject,
-//         message,
-//       },
-//       {
-//         publicKey: config.env.emailjs.publicKey,
-//         blockHeadless: true,
-//         limitRate: {
-//           id: "app",
-//           throttle: 10000,
-//         },
-//       },
-//     )
-//     .then(
-//       (response) => {
-//         console.log("SUCCESS!", response.status, response.text);
-//       },
-//       (error) => {
-//         console.log("FAILED...", error);
-//       },
-//     );
-// };
+emailjs.init({
+  publicKey: config.env.emailjs.publicKey,
+  privateKey: config.env.emailjs.privateKey,
+  limitRate: {
+    throttle: 10000,
+  },
+});
 
 export const sendEmail = async ({
   email,
@@ -53,27 +24,18 @@ export const sendEmail = async ({
   subject: string;
   message: string;
 }) => {
-  console.log("Send Email launched");
-  const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      service_id: config.env.emailjs.serviceId,
-      template_id: config.env.emailjs.templateId,
-      user_id: config.env.emailjs.publicKey,
-      template_params: {
-        email: email,
-        subject: subject,
-        message: message,
-      },
-    }),
-  });
+  try {
+    await emailjs.send(
+      config.env.emailjs.serviceId,
+      config.env.emailjs.templateId,
+      { email, subject, message },
+    );
+  } catch (err) {
+    if (err instanceof EmailJSResponseStatus) {
+      console.log("EMAILJS FAILED...", err);
+      return;
+    }
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    return { statusCode: 500, error: data };
+    console.log("ERROR", err);
   }
-
-  return { statusCode: 200, data: JSON.stringify(data) };
 };
